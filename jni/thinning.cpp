@@ -18,7 +18,6 @@ extern "C" {
 void thinningIteration(cv::Mat& im, int iter)
 {
     cv::Mat marker = cv::Mat::zeros(im.size(), CV_8UC1);
-
     for (int i = 1; i < im.rows-1; i++)
     {
         for (int j = 1; j < im.cols-1; j++)
@@ -40,14 +39,53 @@ void thinningIteration(cv::Mat& im, int iter)
             int m1 = iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8);
             int m2 = iter == 0 ? (p4 * p6 * p8) : (p2 * p6 * p8);
 
-            if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0)
-                marker.at<uchar>(i,j) = 1;
+            if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0){
+            	marker.at<uchar>(i,j)=1;
+            }
         }
     }
 
     im &= ~marker;
 }
 
+void thinningIterationOpt(cv::Mat& im, int iter)
+{
+    cv::Mat marker = cv::Mat::zeros(im.size(), CV_8UC1);
+    int step = im.step1();
+    for (int i = 1; i < im.rows-1; i++)
+    {
+    	uchar *r = im.ptr(i-1);
+        for (int j = 1; j < im.cols-1; j++)
+        {
+            uchar p2 = r[j];//im.at<uchar>(i-1, j);
+            uchar p3 = r[j+1];//im.at<uchar>(i-1, j+1);
+            uchar p9 = r[j-1];//im.at<uchar>(i-1, j-1);
+
+            uchar p4 = r[step+j+1];//.at<uchar>(i, j+1);
+            uchar p8 = r[step+j-1];//im.at<uchar>(i, j-1);
+
+            uchar p5 = r[2*step+j+1];//im.at<uchar>(i+1, j+1);
+            uchar p6 = r[2*step+j];//im.at<uchar>(i+1, j);
+            uchar p7 = r[2*step+j-1];//im.at<uchar>(i+1, j-1);
+
+
+
+            int A  = (p2 == 0 && p3 == 1) + (p3 == 0 && p4 == 1) +
+                     (p4 == 0 && p5 == 1) + (p5 == 0 && p6 == 1) +
+                     (p6 == 0 && p7 == 1) + (p7 == 0 && p8 == 1) +
+                     (p8 == 0 && p9 == 1) + (p9 == 0 && p2 == 1);
+            int B  = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+            int m1 = iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8);
+            int m2 = iter == 0 ? (p4 * p6 * p8) : (p2 * p6 * p8);
+
+            if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0){
+            	marker.at<uchar>(i,j)=1;
+            }
+        }
+    }
+
+    im &= ~marker;
+}
 /**
  * Perform one thinning iteration of Guo-Hall algorithm
  *
@@ -94,29 +132,41 @@ void thinningGuoHallIteration(cv::Mat& im, int iter)
  * @param  useGuoHall Use Guo-Hall or Zhang-Suen algorithm
  */
 JNIEXPORT double JNICALL Java_com_example_opt_1course_1ex_OpCourseEx_thinning(JNIEnv*, jobject, jlong addrMat,
-		jlong useGHull)
+		jint alg)
 {
 	double tStart = (double)getTickCount();
-	bool useGuoHall = (bool)useGHull;
+	int algorithm = (int)alg;
 	cv::Mat& im = *(cv::Mat*)addrMat;
     im /= 255;
 
     cv::Mat prev = cv::Mat::zeros(im.size(), CV_8UC1);
     cv::Mat diff;
 
-    do {
-        if (useGuoHall)
-        {
-            thinningGuoHallIteration(im, 0);
-            thinningGuoHallIteration(im, 1);
-        }
-        else
-        {
-            thinningIteration(im, 0);
-            thinningIteration(im, 1);
-        }
-        cv::absdiff(im, prev, diff);
-        im.copyTo(prev);
+    do{
+    	switch(alg) {
+    	case 0:
+    	{
+    		thinningGuoHallIteration(im, 0);
+    		thinningGuoHallIteration(im, 1);
+    		break;
+    	}
+    	default:
+    	case 1:
+    	{
+    		thinningIteration(im, 0);
+    		thinningIteration(im, 1);
+    		break;
+    	}
+    	case 2:
+    	{
+    		thinningIterationOpt(im, 0);
+    		thinningIterationOpt(im, 1);
+    		break;
+    	}
+
+    	}
+    	cv::absdiff(im, prev, diff);
+    	im.copyTo(prev);
     }
     while (cv::countNonZero(diff) > 0);
 

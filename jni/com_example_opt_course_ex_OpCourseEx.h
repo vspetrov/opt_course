@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (JJ)V
  */
 JNIEXPORT double JNICALL Java_com_example_opt_1course_1ex_OpCourseEx_thinning
-  (JNIEnv *, jobject, jlong, jlong);
+  (JNIEnv *, jobject, jlong, jint);
 
 #ifdef __cplusplus
 }
