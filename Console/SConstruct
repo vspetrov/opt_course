@@ -1,0 +1,15 @@
+import os
+env = Environment(ENV = os.environ)
+env['CC']='icl'
+env['CXX']='icl'
+
+env.Append(CPPPATH = ['/workspace/opencv/build/include'])
+env.Append(LIBPATH = ['/workspace/opencv/build/x64/vc11/lib'])
+env.Append(LIBS = ['opencv_core248','opencv_highgui248','opencv_imgproc248'])
+sources = [
+'thinning.cpp'
+]
+
+
+env.Append(CCFLAGS="-O3")
+env.Program(target="thinning_cpu", source=sources)
