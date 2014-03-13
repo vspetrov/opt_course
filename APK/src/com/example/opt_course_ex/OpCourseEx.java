@@ -26,7 +26,11 @@ public class OpCourseEx extends Activity {
 		((EditText)findViewById(R.id.maxTime)).setText("maxTime: ");
 		((EditText)findViewById(R.id.avTime)).setText("avTime: ");
 	}
-
+	enum thinning_mode{
+		RUN_GUO_HULL_THINNING,
+		RUN_DEFAULT_THINNING,
+		RUN_OPT_THINNING
+	};
 	private void do_test(){
 		ImageView imgView = (ImageView) findViewById(R.id.sampleImageView);
 		Mat img = new Mat();
@@ -41,11 +45,11 @@ public class OpCourseEx extends Activity {
 		Mat img_bkp = img.clone();
 		
 		
-		int iterations=10;
+		int iterations=100;
 		double maxTime=0, minTime=1e10, avTime=0;
 		for (int i=0; i<iterations; i++){
 			Imgproc.resize(img_bkp, img, new Size(100,100));
-			double elapsedTime = thinning(img.getNativeObjAddr(),0);
+			double elapsedTime = thinning(img.getNativeObjAddr(),thinning_mode.RUN_DEFAULT_THINNING.ordinal());
 			if (elapsedTime > maxTime) maxTime = elapsedTime;
 			if (elapsedTime < minTime) minTime = elapsedTime;
 			avTime += elapsedTime;
