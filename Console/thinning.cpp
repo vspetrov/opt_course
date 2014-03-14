@@ -56,43 +56,50 @@ bool thinningIterationOpt(cv::Mat& im, int iter)
 {
     int step = im.step1();
     bool anyChanges = false;
-
+    uchar p2,p3,p4,p5,p6,p7,p8,p9;
+    uchar A, B, m1, m2;
+    uchar *r;
     for (int i = 1; i < im.rows-1; i++)
     {
-    	uchar *r = im.ptr(i-1);
+    	r = im.ptr(i-1);
         for (int j = 1; j < im.cols-1; j++)
         {
             if (r[j+step] == 0) {
-                if (r[j-1] <255) r[j-1]=0;
-                continue;
+                goto prev_check;
             }
-            uchar p2 = r[j];//im.at<uchar>(i-1, j);
-            uchar p3 = r[j+1];//im.at<uchar>(i-1, j+1);
-            uchar p9 = r[j-1];//im.at<uchar>(i-1, j-1);
+            p2 = r[j];//im.at<uchar>(i-1, j);
+            p3 = r[j+1];//im.at<uchar>(i-1, j+1);
+            p9 = r[j-1];//im.at<uchar>(i-1, j-1);
 
-            uchar p4 = r[step+j+1];//.at<uchar>(i, j+1);
-            uchar p8 = r[step+j-1];//im.at<uchar>(i, j-1);
+            p4 = r[step+j+1];//.at<uchar>(i, j+1);
+            p8 = r[step+j-1];//im.at<uchar>(i, j-1);
 
-            uchar p5 = r[2*step+j+1];//im.at<uchar>(i+1, j+1);
-            uchar p6 = r[2*step+j];//im.at<uchar>(i+1, j);
-            uchar p7 = r[2*step+j-1];//im.at<uchar>(i+1, j-1);
+            p5 = r[2*step+j+1];//im.at<uchar>(i+1, j+1);
+            p6 = r[2*step+j];//im.at<uchar>(i+1, j);
+            p7 = r[2*step+j-1];//im.at<uchar>(i+1, j-1);
 
-
-
-            int A  = (p2 == 0 && p3 > 0) + (p3 == 0 && p4 > 0) +
+            m1 = iter == 0 ? (p2 & p4 & p6) : (p2 & p4 & p8);
+            if (m1 > 0) goto prev_check;
+            m2 = iter == 0 ? (p4 & p6 & p8) : (p2 & p6 & p8);
+            if (m2 > 0) goto prev_check;
+            A  = (p2 == 0 && p3 > 0) + (p3 == 0 && p4 > 0) +
                 (p4 == 0 && p5 > 0) + (p5 == 0 && p6 > 0) +
                 (p6 == 0 && p7 > 0) + (p7 == 0 && p8 > 0) +
                 (p8 == 0 && p9 > 0) + (p9 == 0 && p2 > 0);
 
-            int B  = (p2  > 0) + (p3  > 0) + (p4  > 0) + (p5  > 0) + (p6  > 0) + (p7  > 0) + (p8  > 0) + (p9  > 0);
+            if (A  != 1) {
+                goto prev_check;
+            }
+            B  = (p2  > 0) + (p3  > 0) + (p4  > 0)
+                   + (p5  > 0) + (p6  > 0) + (p7  > 0)
+                   + (p8  > 0) + (p9  > 0);
 
-            int m1 = iter == 0 ? (p2 & p4 & p6) : (p2 & p4 & p8);
-            int m2 = iter == 0 ? (p4 & p6 & p8) : (p2 & p6 & p8);
 
-            if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0){
+            if (B >= 2 && B <= 6){
                 r[step+j] = 254;
                 anyChanges = true;
             }
+        prev_check:
             if (r[j-1] <255) r[j-1]=0;
         }
     }
@@ -101,7 +108,7 @@ bool thinningIterationOpt(cv::Mat& im, int iter)
         im.at<uchar>(im.rows-3,im.cols-2) = 0;
 
 
-    uchar *r  = im.ptr(im.rows-2);
+    r  = im.ptr(im.rows-2);
     for (int i=1; i<im.cols-1; i++){
         if (r[i] < 255) r[i] = 0;
     }
