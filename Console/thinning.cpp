@@ -59,6 +59,7 @@ bool thinningIterationOpt(cv::Mat& im, int iter)
     uchar p2,p3,p4,p5,p6,p7,p8,p9;
     uchar A, B, m1, m2;
     uchar *r;
+    assert(im.isContinuous());
     for (int i = 1; i < im.rows-1; i++)
     {
     	r = im.ptr(i-1);
@@ -91,8 +92,8 @@ bool thinningIterationOpt(cv::Mat& im, int iter)
                 goto prev_check;
             }
             B  = (p2  > 0) + (p3  > 0) + (p4  > 0)
-                   + (p5  > 0) + (p6  > 0) + (p7  > 0)
-                   + (p8  > 0) + (p9  > 0);
+                + (p5  > 0) + (p6  > 0) + (p7  > 0)
+                + (p8  > 0) + (p9  > 0);
 
 
             if (B >= 2 && B <= 6){
@@ -100,17 +101,22 @@ bool thinningIterationOpt(cv::Mat& im, int iter)
                 anyChanges = true;
             }
         prev_check:
-            if (r[j-1] <255) r[j-1]=0;
+            if (r[j-1] == 254) r[j-1]=0;
+            // if (r[j] == 254 && j == im.cols-2) r[j] = 0;
         }
     }
 
-    if (im.at<uchar>(im.rows-3,im.cols-2) < 255)
-        im.at<uchar>(im.rows-3,im.cols-2) = 0;
-
-
     r  = im.ptr(im.rows-2);
+
     for (int i=1; i<im.cols-1; i++){
-        if (r[i] < 255) r[i] = 0;
+        if (r[i] == 254) r[i] = 0;
+    }
+
+    r = im.ptr(0)+im.cols-2;
+    for (int i=1; i<im.rows-1; i++){
+        if (r[step*i] == 254){
+            r[step*i] = 0;
+        }
     }
 
 
@@ -218,8 +224,8 @@ int main(int argc, char **argv)
 
     cv::Mat thinning_opt_rst = bw.clone();
     thinningOpt(thinning_opt_rst);
-
     bool correctness = countNonZero(thinning_default_rst != thinning_opt_rst) == 0;
+
     double defMinTime=1e10, defMaxTime=0, defAvTime = 0;
     for (int i=0; i<iterations; i++){
         bw = bw_backup.clone();
