@@ -252,8 +252,10 @@ int main(int argc, char **argv)
     }
     optAvTime /= iterations;
     printf("%s\n",filename);
-    printf("Corr: %d | Lat(sec) [Min,Max,Av]: || Def [%9.5f:%9.5f:%9.5f] || Opt [%9.5f:%9.5f:%9.5f]\n", correctness,defMinTime,defMaxTime,defAvTime,
-           optMinTime,optMaxTime,optAvTime);
+    printf("Corr: %d | Lat(sec) [Min,Max,Av]: || Def [%9.5f:%9.5f:%9.5f] || Opt [%9.5f:%9.5f:%9.5f] || AvSpeedUp %5.2fx\n",
+           correctness,defMinTime,defMaxTime,defAvTime,
+           optMinTime,optMaxTime,optAvTime,
+           defAvTime/optAvTime);
     printf("-------------------------------------------------------\n");
     fflush(stdout);
 
