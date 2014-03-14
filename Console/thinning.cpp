@@ -54,7 +54,6 @@ void thinningIteration(cv::Mat& im, int iter)
 
 bool thinningIterationOpt(cv::Mat& im, int iter)
 {
-    cv::Mat marker = cv::Mat::zeros(im.size(), CV_8UC1);
     int step = im.step1();
     bool anyChanges = false;
 
@@ -63,7 +62,10 @@ bool thinningIterationOpt(cv::Mat& im, int iter)
     	uchar *r = im.ptr(i-1);
         for (int j = 1; j < im.cols-1; j++)
         {
-            if (r[j+step] == 0) continue;
+            if (r[j+step] == 0) {
+                if (r[j-1] <255) r[j-1]=0;
+                continue;
+            }
             uchar p2 = r[j];//im.at<uchar>(i-1, j);
             uchar p3 = r[j+1];//im.at<uchar>(i-1, j+1);
             uchar p9 = r[j-1];//im.at<uchar>(i-1, j-1);
@@ -77,22 +79,34 @@ bool thinningIterationOpt(cv::Mat& im, int iter)
 
 
 
-            int A  = (p2 == 0 && p3 == 1) + (p3 == 0 && p4 == 1) +
-                     (p4 == 0 && p5 == 1) + (p5 == 0 && p6 == 1) +
-                     (p6 == 0 && p7 == 1) + (p7 == 0 && p8 == 1) +
-                     (p8 == 0 && p9 == 1) + (p9 == 0 && p2 == 1);
-            int B  = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
-            int m1 = iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8);
-            int m2 = iter == 0 ? (p4 * p6 * p8) : (p2 * p6 * p8);
+            int A  = (p2 == 0 && p3 > 0) + (p3 == 0 && p4 > 0) +
+                (p4 == 0 && p5 > 0) + (p5 == 0 && p6 > 0) +
+                (p6 == 0 && p7 > 0) + (p7 == 0 && p8 > 0) +
+                (p8 == 0 && p9 > 0) + (p9 == 0 && p2 > 0);
+
+            int B  = (p2  > 0) + (p3  > 0) + (p4  > 0) + (p5  > 0) + (p6  > 0) + (p7  > 0) + (p8  > 0) + (p9  > 0);
+
+            int m1 = iter == 0 ? (p2 & p4 & p6) : (p2 & p4 & p8);
+            int m2 = iter == 0 ? (p4 & p6 & p8) : (p2 & p6 & p8);
 
             if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0){
-            	marker.at<uchar>(i,j)=1;
+                r[step+j] = 254;
                 anyChanges = true;
             }
+            if (r[j-1] <255) r[j-1]=0;
         }
     }
 
-    im &= ~marker;
+    if (im.at<uchar>(im.rows-3,im.cols-2) < 255)
+        im.at<uchar>(im.rows-3,im.cols-2) = 0;
+
+
+    uchar *r  = im.ptr(im.rows-2);
+    for (int i=1; i<im.cols-1; i++){
+        if (r[i] < 255) r[i] = 0;
+    }
+
+
     return anyChanges;
 }
 /**
@@ -165,7 +179,6 @@ void thinning(cv::Mat &im, int algorithm)
 
 void thinningOpt(cv::Mat &im)
 {
-    im /= 255;
     bool anyChanges = true;
     do{
         bool change1 = thinningIterationOpt(im, 0);
@@ -173,7 +186,6 @@ void thinningOpt(cv::Mat &im)
         anyChanges = change1 | change2;
     }
     while (anyChanges);
-    im *= 255;
 }
 
 /**
